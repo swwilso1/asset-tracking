@@ -1,0 +1,71 @@
+
+/**
+* 
+* Mailer module wraps the native mail send operations
+* @module mailer
+*
+*/
+
+var templates = require("asset-tracking/entities/helper/mail/templates");
+var config = require("asset-tracking/entities/config");
+var _ = require("modules/underscore/underscore.js")._;
+
+var log = require("log");
+log.setLevel("INFO");
+
+
+/**
+* Send alert to the e-mail address saved in config
+* 
+* @function sendAlertEmail
+* @param {object} [alert] the data to be processed 
+* @param {object} [alert.loacation] the location of the device
+* @param {Number} [alert.loacation.lat] the latitude  of the device
+* @param {Number} [alert.loacation.lon] the longtude of the device
+* @param {Number} [alert.temperature] the Temperature as measured by the device
+* @param {Number} [alert.luminosity] the Luminosity as measured by the device
+* @param {Number} [alert.pressure] the Pressure as measured by the device
+* @param {String} [alert.alert_type] the alert type
+* @param {String} [alert.alert_info] the alert msg
+* @param {String} [alert.id] the device id
+* @return {void}
+*
+*/
+
+function sendAlertEmail(alert) {
+     
+    try{
+         sendEmailForAlertType(alert,config.email.TO,config.email.FROM);
+    }
+    catch(e){
+        log.info("Mailer error: " + e);
+    }
+   
+}
+
+/**
+* Send alert to the mail passed
+* 
+* @function sendAlertEmail
+* @param {object} [alert] the data to be processed 
+* @param {object} [alert.loacation] the location of the device
+* @param {Number} [alert.loacation.lat] the latitude  of the device
+* @param {Number} [alert.loacation.lon] the longtude of the device
+* @param {Number} [alert.temperature] the Temperature as measured by the device
+* @param {Number} [alert.luminosity] the Luminosity as measured by the device
+* @param {Number} [alert.pressure] the Pressure as measured by the device
+* @param {String} [alert.alert_type] the alert type
+* @param {String} [alert.alert_info] the alert msg
+* @param {String} [alert.id] the device id
+* @param {String} [toEmail] the e-mail address to send the alert to
+* @param {String} [fromEmail] the e-mail address to set as from in the mail
+* @return {void}
+*
+*/
+
+function sendEmailForAlertType( alert, toEmail, fromEmail) {
+    var subject = _.template(templates.getTemplate("mail", alert.alert_type).subject)(alert);
+    var body = _.template(templates.getTemplate("mail", alert.alert_type).body)(alert);
+    log.info(toEmail+ " "+ fromEmail + " " + subject + " " + body)
+    log.info(JSON.stringify(sendMail(toEmail, fromEmail, subject, body)));
+}

@@ -1,0 +1,60 @@
+/**
+* 
+* UnInstallation module remove the created components by the Installation module
+* @module uninstall
+*
+*/
+var responseObject = {};
+var pubsub = require("pubsub");
+var stores = require("store");
+var schema = require("schema");
+var devices = require("device");
+var subdomain = require("subdomain");
+
+/** REMOVE ADVANCED APP CREATED CHANNELS **/
+var channels =  ["responseChannel", "requestChannel"];
+
+var options = {
+  "subscribeACL": "anonymous",
+  "publishACL": "anonymous"
+}
+
+channels.forEach(function(channel) {
+   var step1 = pubsub.deleteChannel(channel);
+   responseObject["channelDeletion_"+channel] = JSON.stringify(step1)
+});
+
+
+/** REMOVE ADVANCED APP CREATED SUBDOMAIN **/
+var _subdomain = request.account.accountKey;
+
+
+
+var step2 = subdomain.delete(_subdomain);
+responseObject["subdomainDeletion_"+_subdomain] = JSON.stringify(step2)
+
+/** REMOVE ADVANCED APP CREATED STORE  **/
+var step3 =stores.delete("multitech");    
+
+responseObject["storeDeletion_multitech"] = JSON.stringify(step3)
+
+/** REMOVE ADVANCED APP CREATED SCHEMAS  **/
+
+
+
+var step4 = schema.delete("multitech_event");
+responseObject["schemaDeletion_multitech_event"] = JSON.stringify(step4);
+var step5 = schema.delete("multitech_alert");
+responseObject["schemaDeletion_multitech_alert"] = JSON.stringify(step5);
+var step6 = schema.delete("multitech_latest_event");
+responseObject["schemaDeletion_multitech_latest_event"] = JSON.stringify(step6);
+/** REMOVE ADVANCED APP DEMO DEVICE  **/
+
+var step7= devices.delete("demo");
+responseObject["deviceCreation_demo"] = JSON.stringify(step7);
+
+/** REMOVE THE UNAUTHORIZED PAGE **/
+var step9=configuration.setUnauthorizedErrorFile("");
+responseObject["unauthorizedPageDeAttched"] = JSON.stringify(step9);
+
+return responseObject;

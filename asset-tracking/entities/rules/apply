@@ -1,0 +1,33 @@
+
+/**
+* This module wrrap the call to the Decision Table  
+* @module apply
+*
+*/
+var utils = require("asset-tracking/entities/utils");
+var log = require("log");
+log.setLevel("INFO");
+
+
+/**
+* 
+* 
+* @function logData
+* @param {Object} [data] the data to be processed 
+* @param {String} [rule] the Decision Table name
+* @return {Object} the result
+*
+*/
+function process(rule, data) {
+
+    try {
+
+        var result = utils.executeDecisionTable("asset-tracking/entities/rules/" + rule, data);
+
+        return result;
+
+    } catch (e) {
+        log.info("processing rule exception : " + JSON.stringify(e));
+
+    }
+}

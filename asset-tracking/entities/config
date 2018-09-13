@@ -1,0 +1,14 @@
+/**
+* Configuration Module contains the constants used in the system
+* @module config
+*
+*/
+
+var email = {
+    "TO":  request.account.adminEmail,
+    "FROM": "Multitech asset tracking",
+    "BODY": "Multitech asset tracking Warning."
+}
+
+ 
+var expiry = 60;

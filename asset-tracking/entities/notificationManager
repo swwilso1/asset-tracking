@@ -1,0 +1,69 @@
+/**
+* This module responsable for publishing data to channels 
+* @module notificationManager
+*
+*/
+var utils = require("asset-tracking/entities/utils");
+var deviceManager=require("asset-tracking/entities/deviceManager");
+
+
+
+
+//Channel used by device manager to publish the data of the device to subscribed clients.
+const pubChannel = "responseChannel";
+
+/**
+* publish the device event to the map and the dashboard
+* 
+* @function publish
+* @param {object} [data] the data to be processed 
+* @param {object} [data.loacation] the location of the device
+* @param {Number} [data.loacation.lat] the latitude  of the device
+* @param {Number} [data.loacation.lon] the longtude of the device
+* @param {Number} [data.temperature] the Temperature as measured by the device
+* @param {Number} [data.luminosity] the Luminosity as measured by the device
+* @param {Number} [data.pressure] the Pressure as measured by the device
+* @param {String} [data.id] the device id
+* @return{Object} the result of the operations
+*
+*/
+function publish (data) {
+    try{
+        var msgTag= "dashboard_data_"+data.id;
+        var latestData = utils.format([deviceManager.getDeviceLatestEvent(data.id)]);
+        var data = 
+               { 
+                 "live": latestData, 
+                 "historical": deviceManager.getDeviceEvents(data.id)
+               }
+        utils.publishResponse(pubChannel, "live_map_data", latestData);
+        return utils.publishResponse(pubChannel, msgTag, data);
+    }catch (ex){
+        
+        throw ex;
+        return false;
+    }
+}
+
+/**
+* publish the device alert 
+* 
+* @function publishAlert
+* @param {object} [data] the data to be processed 
+* @param {object} [data.loacation] the location of the device
+* @param {Number} [data.loacation.lat] the latitude  of the device
+* @param {Number} [data.loacation.lon] the longtude of the device
+* @param {Number} [data.temperature] the Temperature as measured by the device
+* @param {Number} [data.luminosity] the Luminosity as measured by the device
+* @param {Number} [data.pressure] the Pressure as measured by the device
+* @param {String} [data.alert_type] the alert type
+* @param {String} [data.alert_info] the alert msg
+* @param {String} [data.id] the device id
+* @return{Object} the result of the operations
+*
+*/
+function publishAlert (data) {
+var msg = {result : [data],
+           action: "add"};
+     return utils.publishResponse(pubChannel, "alert_grid", msg);
+}

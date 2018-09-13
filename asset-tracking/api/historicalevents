@@ -1,0 +1,34 @@
+/**
+* The historicalevents api return array of the historicalevents of the devices recorded in the system
+* 
+* @module historicalevents
+* @param {String} [id] the device id /Optional 
+* @return{Array} array of historicalevents that match the id if the id is sent , all the alerts otherwise
+*
+*/
+
+var deviceManager=require("asset-tracking/entities/deviceManager");
+var utils = require("asset-tracking/entities/utils");
+var query = {};
+if(request.body != null){
+    query = request.body;
+}else if(request.parameters.body){
+    query = request.parameters.body;
+} else {
+    query = request.parameters;
+}
+if(typeof query == 'string'){
+    try{
+        query = JSON.parse(query);   
+    }catch(e){
+    }
+}
+try{
+    if(query.id){
+        return deviceManager.getDeviceEvents(query.id);
+    }else{
+        return deviceManager.getAllEvents();
+    }
+}catch(ex){
+    throw ex
+}

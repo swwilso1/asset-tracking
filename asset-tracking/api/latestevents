@@ -1,0 +1,26 @@
+/**
+* The latestevents api return array of the latestevents of the devices recorded in the system
+* Each Device has one latest event its value is the last record inserted by the system
+*
+* @module latestevents
+* @param {String} [id] the device id /Optional 
+* @return{Array} array of latestevents that match the id if the id is sent , all the alerts otherwise the array formated to match the needs of the map UIComponent
+*
+*/
+
+var deviceManager=require("asset-tracking/entities/deviceManager");
+var utils = require("asset-tracking/entities/utils");
+
+//Ingest the request params or data
+var requestParams = request.body || request.parameters;
+
+try {
+    //id passed return the latest event for this device 
+    if(requestParams.id){
+        return utils.format([deviceManager.getDeviceLatestEvent(requestParams.id)]);
+    } else { //otherwise return all latest events
+        return utils.format(deviceManager.getAllLatestEvents());
+    }
+}catch(ex){
+    throw ex
+}

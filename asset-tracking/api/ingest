@@ -1,0 +1,132 @@
+/**
+* The external entry of the application for the devices and simulator to send the information to the app
+* 
+* @module Ingest
+* @param {object} [loacation] the location of the device
+* @param {Number} [loacation.lat] the latitude  of the device
+* @param {Number} [loacation.lon] the longtude of the device
+* @param {Number} [temperature] the Temperature as measured by the device
+* @param {Number} [luminosity] the Luminosity as measured by the device
+* @param {Number} [pressure] the Pressure as measured by the device
+* @param {String} [id] the device id
+* @return{boolean} the result of the operations
+*
+*/
+
+var deviceManager=require("asset-tracking/entities/deviceManager");
+var alertManager=require("asset-tracking/entities/alertManager");
+var notificationManager=require("asset-tracking/entities/notificationManager");
+var utils=require("asset-tracking/entities/utils");
+var log = require("log");
+log.setLevel("INFO");
+try{
+    //Ingest the request params or data
+    // var requestParams = request.body || request.parameters;
+    var requestParams = JSON.parse(request.rawBody);
+    //prepare the data obj
+    
+    log.info("requestParams : "+JSON.stringify( requestParams));
+    /*    
+    var data = {
+        id:requestParams.id,
+        temperature: requestParams.temperature,
+        luminosity: requestParams.luminosity,
+        pressure:requestParams.pressure,
+        location:""
+
+    }
+    */
+    
+    var data = {
+        id:requestParams.id,
+        level: requestParams.level,
+        power: requestParams.power,
+        location:""
+    };
+        
+    //build valid location if location not empty in params 
+    if(isNumeric(requestParams.location.lat) && isNumeric(requestParams.location.lon)){
+        data.location=""+parseFloat(requestParams.location.lat).toFixed(4)+ "," +parseFloat(requestParams.location.lon).toFixed(4)
+    }
+    
+    //load latest event 
+    var latestEvent=deviceManager.getDeviceLatestEvent(data.id)||{};
+    log.info("latestEvent : "+JSON.stringify( latestEvent));
+    
+    //fill missing data from the latest event sent by the device
+    data.location=data.location||latestEvent.location;
+    
+    if(data.level || data.level == 0) {
+        log.info("data.level: " + data.level);
+        data.level = Math.round(data.level / 255 * 100);
+    }
+    else if(latestEvent.level) {
+        data.level = latestEvent.level
+    }
+    else {
+        data.level = 0;
+    }
+
+    if(data.power || data.power == 0) {
+        data.power = data.power / 10;
+    }
+    else if(latestEvent.power) {
+        data.power = latestEvent.power;
+    }
+    else {
+        data.power = 0;
+    }
+    
+    // data.power = data.power || latestEvent.power || 0;
+        
+//    data.level = "level" in data ? data.level : latestEvent.level || 0;
+//    data.power = "power" in data ? data.power : latestEvent.power || 0;
+//    data.temperature=data.temperature||latestEvent.temperature||0;
+//    data.luminosity=data.luminosity||latestEvent.luminosity||0;
+//    data.pressure=data.pressure||latestEvent.pressure||0;
+    
+    //if not location defined then delete it
+    if(!data.location){
+        delete data.location;
+    }
+    
+    
+   
+	log.info("data : "+JSON.stringify( data));
+
+    //add the event
+    
+    var eventSaved = deviceManager.createDeviceEvent(data).metadata.status=="success";
+    
+    
+    
+    //proccess the event to check if any alert if not the current request for gps data
+    // var alertProcessed=alertManager.processData(data);
+    
+   
+
+    //publish the data to channel
+    var dataPublished=notificationManager.publish(data);
+
+    
+
+    //return the result
+    //return  eventSaved && alertProcessed && dataPublished;
+    
+    return eventSaved && dataPublished;
+    
+}catch(ex){
+    throw ex;
+}
+
+/**
+* Check if the number value not NaN
+* 
+* @function isNumeric
+* @param {Number} [n] the number
+* @return{boolean} true if n!= NaN , false otherwise
+*
+*/
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}

@@ -1,0 +1,114 @@
+/**
+* This module responsable for processing the data to check if any alert must logged or sent by email 
+* @module alertManager
+*
+*/
+
+var apply = require("asset-tracking/entities/rules/apply");
+var deviceManager = require("asset-tracking/entities/deviceManager");
+var notificationManager=require("asset-tracking/entities/notificationManager");
+var mailer = require("asset-tracking/entities/helper/mail/mailer");
+var templates=require("asset-tracking/entities/helper/mail/templates");
+var _ = require("modules/underscore/underscore.js")._;
+var log = require("log");
+log.setLevel("INFO");
+
+
+
+/**
+* process the data to send and/or save alerts
+* 
+* @function processData
+* @param {object} [data] the data to be processed 
+* @param {object} [data.loacation] the location of the device
+* @param {Number} [data.loacation.lat] the latitude  of the device
+* @param {Number} [data.loacation.lon] the longtude of the device
+* @param {Number} [data.temperature] the Temperature as measured by the device
+* @param {Number} [data.luminosity] the Luminosity as measured by the device
+* @param {Number} [data.pressure] the Pressure as measured by the device
+* @param {String} [data.id] the device id
+* @return{boolean} the result of the operations
+*
+*/
+function processData(data) {
+    try {
+        //get the alerts decision table result 
+        var result = apply.process("alerts", data);
+
+        if (!result) {
+            throw "apply return null response"
+        } else {
+            //process data
+
+
+            if (result.length == 0) return true;
+            log.info("rule result is : " + JSON.stringify(result));
+            for (i = 0; i < result.length; i++) {
+                var obj = result[i];
+
+                var alert = data;
+                alert.alert_type = obj.email;
+                var msg = _.template(templates.getTemplate("log", alert.alert_type).body)(alert);
+                alert.alert_info =msg;
+                //if we must send alert email accordding to the decision table
+                if (obj.email) {
+                    emailData(alert);
+                }
+                //if we must log the alert accordding to the decision table
+                if (obj.log) {
+                    logData(alert);
+                    notificationManager.publishAlert(alert);
+                }
+
+            }
+
+        }
+        return true;
+    } catch (e) {
+        log.info(e);
+        return false;
+    }
+
+}
+
+/**
+* save the alert to the database
+* 
+* @function logData
+* @param {object} [data] the data to be processed 
+* @param {object} [data.loacation] the location of the device
+* @param {Number} [data.loacation.lat] the latitude  of the device
+* @param {Number} [data.loacation.lon] the longtude of the device
+* @param {Number} [data.temperature] the Temperature as measured by the device
+* @param {Number} [data.luminosity] the Luminosity as measured by the device
+* @param {Number} [data.pressure] the Pressure as measured by the device
+* @param {String} [data.alert_type] the alert type
+* @param {String} [data.alert_info] the alert msg
+* @param {String} [data.id] the device id
+* @return {void}
+*
+*/
+function logData(alert) {
+    deviceManager.createDeviceAlert(alert);
+}
+
+/**
+* email the alert 
+* 
+* @function logData
+* @param {object} [data] the data to be processed 
+* @param {object} [data.loacation] the location of the device
+* @param {Number} [data.loacation.lat] the latitude  of the device
+* @param {Number} [data.loacation.lon] the longtude of the device
+* @param {Number} [data.temperature] the Temperature as measured by the device
+* @param {Number} [data.luminosity] the Luminosity as measured by the device
+* @param {Number} [data.pressure] the Pressure as measured by the device
+* @param {String} [data.alert_type] the alert type
+* @param {String} [data.alert_info] the alert msg
+* @param {String} [data.id] the device id
+* @return {void}
+*
+*/
+function emailData(alert) {
+    mailer.sendAlertEmail(alert);
+}

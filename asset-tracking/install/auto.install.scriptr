@@ -1,0 +1,87 @@
+/**
+* 
+* Installation module prepare the environment for the app to work 
+* @module install
+*
+*/
+
+var responseObject = {};
+var pubsub = require("pubsub");
+var stores = require("store");
+var schema = require("schema");
+var devices = require("device");
+var subdomain = require("subdomain");
+var configuration = require("configuration");
+
+/** SETUP ADVANCED APP REQUIRED CHANNELS IF NOT EXIST **/
+
+var channels =  ["responseChannel", "requestChannel"];
+
+var options = {
+  "subscribeACL": "anonymous",
+  "publishACL": "anonymous"
+}
+
+channels.forEach(function(channel) {
+   var step1 = pubsub.createChannel(channel, options);
+   responseObject["channelCreation_"+channel] = JSON.stringify(step1);
+});
+
+/** SETUP ADVANCED APP REQUIRED DOMAIN IF NO DOMAIN IS SET **/
+
+var _subdomain = request.account.accountKey;
+
+
+var step2 =  subdomain.create(_subdomain);
+responseObject["subdomainCreation_"+_subdomain] = JSON.stringify(step2);
+
+/** SETUP ADVANCED APP REQUIRED DOMAIN IF NO DOMAIN IS SET  **/
+var step3 =stores.save("multitech", {
+    "saveDocumentACL" : "nobody",
+    "deleteDocumentACL" : "nobody",
+    "queryACL" : "nobody",
+    "getAttachmentACL" : "nobody"
+});    
+
+responseObject["storeCreation_multitech"] = JSON.stringify(step3);
+
+/** SETUP ADVANCED APP REQUIRED SCHEMAS IF NOT SET  **/
+
+// var multitech_event_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>temperature</field><field>luminosity</field><field>pressure</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='temperature' type='numeric'></field><field name='luminosity' type='numeric'></field><field name='pressure' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+var multitech_event_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>level</field><field>power</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='level' type='numeric'></field><field name='power' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+//var multitech_alert_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>alert_type</field><field>alert_info</field><field>temperature</field><field>luminosity</field><field>pressure</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='alert_type' type='string'></field><field name='alert_info' type='string'></field><field name='temperature' type='numeric'></field><field name='luminosity' type='numeric'></field><field name='pressure' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+var multitech_alert_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>alert_type</field><field>alert_info</field><field>level</field><field>power</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='alert_type' type='string'></field><field name='alert_info' type='string'></field><field name='level' type='numeric'></field><field name='power' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+
+//var multitech_latest_event_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>temperature</field><field>luminosity</field><field>pressure</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='temperature' type='numeric'></field><field name='luminosity' type='numeric'></field><field name='pressure' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+var multitech_latest_event_schema="<schema><aclGroups><aclGroup name='multitech'><read>authenticated</read><write>authenticated</write><fields><field>id</field><field>level</field><field>power</field><field>location</field></fields></aclGroup><defaultAcl><read>authenticated</read><write>authenticated</write><delete>group:multitech</delete></defaultAcl><schemaAcl><read>nobody</read><write>nobody</write><delete>nobody</delete></schemaAcl></aclGroups><fields><field name='id' type='string'></field><field name='level' type='numeric'></field><field name='power' type='numeric'></field><field name='location' type='geospatial'></field></fields></schema>";
+
+var step4 = schema.create("multitech_event",multitech_event_schema);
+responseObject["schemaCreation_multitech_event"] = JSON.stringify(step4);
+var step5 = schema.create("multitech_alert",multitech_event_schema);
+responseObject["schemaCreation_multitech_alert"] = JSON.stringify(step5);
+var step6 = schema.create("multitech_latest_event",multitech_latest_event_schema);
+responseObject["schemaCreation_multitech_latest_event"] = JSON.stringify(step6);
+
+/** SETUP ADVANCED APP DEMO DEVICE  **/
+
+var params = {
+    "id":"demo",
+    "password" : "demo",
+    "name" : "demo",
+    
+};
+var step7= devices.save(params);
+responseObject["deviceCreation_demo"] = JSON.stringify(step7);
+var step8=devices.generateToken("demo");
+responseObject["deviceTokenCreation_demo"] = JSON.stringify(step8);
+
+/** SETUP UN AUTHORIZED PAGE **/
+var step9=configuration.setUnauthorizedErrorFile("asset-tracking/view/html/unauthorize.html");
+responseObject["unauthorizedPageCreation"] = JSON.stringify(step9);
+
+return responseObject;

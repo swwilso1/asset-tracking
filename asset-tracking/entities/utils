@@ -1,0 +1,87 @@
+/**
+* This module contains some helper functions
+* @module utils
+*
+*/
+
+/**
+* 
+* 
+* @function publishResponse
+* @param {Object} [data] the data to be published 
+* @param {String} [channel] the channel to publish to
+* @param {String} [msgTag] the tag to be added to the data
+* @return {boolean} true
+*
+*/
+var publishResponse = function(channel, msgTag, data) {
+   var message = {"result": data};
+   
+   //Add a default id to identify the message published over the socket
+   message["id"] = msgTag;
+   
+   publish(channel, message);
+    
+    return true;
+}
+
+/**
+* 
+* 
+* @function executeDecisionTable
+* @param {Object} [payload] the data to be processed 
+* @param {String} [decisionTable] the name of the table to be executed
+* @return {Object} the decision table result
+*
+*/
+function executeDecisionTable(decisionTable, payload){
+    var sdtLibScript = require("m/scriptUtil");
+    return sdtLibScript.execute(decisionTable, {"payload": JSON.stringify(payload)});
+}
+
+/**
+* 
+* Format the data to fit the map UI Component
+* @function format
+* @param {Object} [data] the data to be processed 
+* @return {Object} the formatted Data
+*
+*/
+function format(data){
+    var result = {};
+    for(var index = 0; index < data.length; index++ ){
+        var datum = data[index];
+        if(!datum.location){
+            continue;
+        }
+        if(result[datum.id] == null){
+            result[datum.id] = {
+                "0": [],
+                "order": ["0"],
+                "source": "simulator"//datum.source //THIS IS THE SOURCE DISPLAY
+            };
+        }
+        var point = {
+            id: {value: datum.id},
+            myName: {value: datum.myName},
+            lat: {value: (datum.location).split(",")[0]},
+            long: {value:datum.location.split(",")[1]},
+            level: {value: datum.level},
+            power: {value: datum.power},
+//            pressure: {value: datum.pressure},
+//            luminosity: {value: datum.luminosity},
+//            temperature: {value: datum.temperature},
+            dmp: {value: datum.source},
+            latest: result[datum.id].length == 0 ? true : false
+        }
+        if(datum.creationDate == null){
+            point.timestamp = (new Date()).toISOString();
+        }else{
+            point.timestamp = (new Date(datum.lastModifiedDate)).toISOString();
+        }
+        result[datum.id]["0"].push(point)
+
+
+    }
+    return result;
+}

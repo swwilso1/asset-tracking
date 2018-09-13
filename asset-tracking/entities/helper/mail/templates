@@ -1,0 +1,82 @@
+
+/**
+* This is a set of e-mail templates to be used to send alerts as resulting from the decision table execution (returned "action") 
+* Whenever modifying the decision table or adding new actions, please changed please change/add the corresponding e-mail templates
+* @module templates
+*
+*/
+
+
+
+var _templates = {
+ 
+  mail: {
+      "high_level" : {
+          "subject": "High Level alert for device <%= id %>",
+          "body": "Device <%= id %><br/>Level: <%= level%> "
+      },
+      "high_power" : {
+          "subject": "High Power alert for device <%= id %>",
+          "body": "Device <%= id %><br/>Power: <%= power%> "
+      }
+      /*
+      "high_temperature" : {
+           "subject": "High Temperature alert for device <%= id %>",
+           "body": "Device: <%= id %><br/>Temperature: <%= temperature%> "
+       },
+       "high_luminosity" : {
+           "subject": "High Luminosity alert for device <%= id %>",
+           "body": "Device: <%= id %><br/>Luminosity: <%= luminosity%> "
+       },
+       "high_pressure" : {
+           "subject": "High Pressure alert for device <%= id %>",
+           "body": "Device:<%= id %><br/>Pressure: <%= pressure%> "
+       }
+       */
+  },
+    log: {
+        "high_level" : {
+            "subject": "High Level alert for device <%= id %>",
+            "body": "Device: <%= id %>, Level: <%= level%> "
+        },
+        "high_power" : {
+            "subject" : "High Power alert for device <%= id %>",
+            "body": "Device: <%= id %>, Power: <%= power%> "
+        }
+        /*
+        "high_temperature" : {
+           "subject": "High Temperature alert for device <%= id %>",
+           "body": "Device: <%= id %>, Temperature: <%= temperature%> "
+       },
+       "high_luminosity" : {
+           "subject": "High Luminosity alert for device <%= id %>",
+           "body": "Device: <%= id %>, Luminosity: <%= luminosity%> "
+       },
+       "high_pressure" : {
+           "subject": "High Pressure alert for device <%= id %>",
+           "body": "Device:<%= id %>, Pressure: <%= pressure%> "
+       }
+       */
+  }
+}
+
+/**
+*
+* 
+* @function getTemplate
+* @param {String} [type] the template type values in {mail , log}
+* @param {String} [event] event name actually returned from the alerts DecisionTable
+* @return{Object} contains Subject and Body as result of the template construction 
+*
+*/
+function getTemplate(type, event){
+   var result =  _templates[type][event];
+    if(! result){
+        result={
+            subject:"Conduit <%= id %> Alert!",
+            body:"<%= id %> Level: <%= level%> , Power: <%= power%>"
+//            body:"<%= id %> Pressure: <%= pressure%> , Luminosity: <%= luminosity%> , Temperature: <%= temperature%>"
+        }
+    }
+  return result;
+}

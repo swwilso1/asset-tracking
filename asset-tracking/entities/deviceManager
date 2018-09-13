@@ -1,0 +1,296 @@
+
+/**
+* This module represents the database operations as function and isolates the direct interactions to the database
+* @module deviceManager
+*
+*/
+
+
+
+// Get an instance of the DefaultStore using the require() function
+var document = require("document");
+var log = require("log");
+log.setLevel("INFO");
+
+// Get an instance of your custom store called "multitech"
+var multitechStore = document.getInstance("multitech");
+
+
+// schemas names
+var event_schema="multitech_event";
+var alert_schema="multitech_alert";
+var latest_event_schema="multitech_latest_event";
+
+
+/**
+*
+* 
+* @function deleteDevice
+* @param {String} [id] the device id to be deleted
+* @return {void}
+* @throw {error} in case if the id not sent
+*/
+function deleteDevice(id) {
+     if(!id){
+        throw "id is empty"
+    }
+    var data=getDeviceData(id);
+    for(var x in data){
+        multitechStore.delete(x.key);
+    }
+}
+
+/**
+*
+* 
+* @function createDeviceAlert
+* @param {object} [entry] the data to be processed 
+* @param {object} [entry.loacation] the location of the device
+* @param {Number} [entry.loacation.lat] the latitude  of the device
+* @param {Number} [entry.loacation.lon] the longtude of the device
+* @param {Number} [entry.temperature] the Temperature as measured by the device
+* @param {Number} [entry.luminosity] the Luminosity as measured by the device
+* @param {Number} [entry.pressure] the Pressure as measured by the device
+* @param {String} [entry.alert_type] the alert type
+* @param {String} [entry.alert_info] the alert msg
+* @param {String} [entry.id] the device id
+* @return {Object} the operation response
+* @throw {error} in case the id not sent
+*
+*/
+function createDeviceAlert(entry) {
+    if(!entry || !entry.id){
+        throw "entry or entry.id is empty"
+    }
+
+    entry["meta.schema"]=alert_schema;
+    return multitechStore.create(entry) ;
+}
+/**
+*
+* 
+* @function saveDeviceLatestEvent
+* @param {object} [entry] the data to be processed 
+* @param {object} [entry.loacation] the location of the device
+* @param {Number} [entry.loacation.lat] the latitude  of the device
+* @param {Number} [entry.loacation.lon] the longtude of the device
+* @param {Number} [entry.temperature] the Temperature as measured by the device
+* @param {Number} [entry.luminosity] the Luminosity as measured by the device
+* @param {Number} [entry.pressure] the Pressure as measured by the device
+* @param {String} [entry.id] the device id
+* @return {boolean} the operation result
+* @throw {error} in case the id not sent
+*
+*/
+function saveDeviceLatestEvent(entry){
+    if(!entry || !entry.id){
+        throw "entry or entry.id is empty"
+    }
+        
+    //update latest event document
+    var latestEvent={};
+    for(x in entry){
+        latestEvent[x]=entry[x];
+    }
+    latestEvent["meta.schema"] = latest_event_schema;
+    latestEvent.key = latest_event_schema+"_"+latestEvent.id;
+    var latesteventUpdated=multitechStore.save(latestEvent);
+	 if(!latesteventUpdated || ( latesteventUpdated.metadata.status!="success")){
+        log.error("update latest event error : "+ JSON.stringify( latesteventUpdated));
+    }
+    
+    return latesteventUpdated;
+}
+/**
+*
+* 
+* @function createDeviceEvent
+* @param {object} [entry] the data to be processed 
+* @param {object} [entry.loacation] the location of the device
+* @param {Number} [entry.loacation.lat] the latitude  of the device
+* @param {Number} [entry.loacation.lon] the longtude of the device
+* @param {Number} [entry.temperature] the Temperature as measured by the device
+* @param {Number} [entry.luminosity] the Luminosity as measured by the device
+* @param {Number} [entry.pressure] the Pressure as measured by the device
+* @param {String} [entry.id] the device id
+* @return {Object} the operation response
+* @throw {error} in case the id not sent
+*
+*/
+function createDeviceEvent(entry) {
+    if(!entry || !entry.id){
+        throw "entry or entry.id is empty"
+    }
+        
+    //update latest event document
+    saveDeviceLatestEvent(entry);
+    
+    entry["meta.schema"]=event_schema;
+    return multitechStore.create(entry) ;
+}
+
+/**
+*
+* 
+* @function getDeviceData
+* @param {String} [id] the device id
+* @return {Array} all the device data (latestEvent, historicalEvents, Alerts)
+* @throw {error} in case the id not sent
+*
+*/
+
+function getDeviceData(id){
+    if(!id){
+        throw "id is empty"
+    }
+    var result = multitechStore.query({"query":'id="'+id+'"',fields:"*"});
+    if(result && result.metadata.status=="success"){
+        return result.result.documents;
+    } else{
+        return null;
+    }
+    
+}
+
+/**
+*
+* 
+* @function getDeviceEvents
+* @param {String} [id] the device id
+* @return {Array}  the device data historicalEvents
+* @throw {error} in case the id not sent
+*
+*/
+
+function getDeviceEvents(id){
+    if(!id){
+        throw "id is empty"
+    }
+    var result = multitechStore.query(
+        {"query":'id="'+id+'" and schema = "'+event_schema+'"',fields:"*"}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result.documents;
+    } else{
+        return null;
+    }
+    
+}
+/**
+*
+* 
+* @function getDeviceEvents
+* @return {Array}  all the historicalEvents
+*
+*/
+function getAllEvents(){
+    
+    var result = multitechStore.query(
+        {"query":'schema = "'+event_schema+'"',fields:"*"}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result.documents;
+    } else{
+        return null;
+    }
+    
+}
+/**
+*
+* 
+* @function getDeviceAlerts
+* @param {String} [id] the device id
+* @return {Array}  the device data alerts
+* @throw {error} in case the id not sent
+*
+*/
+function getDeviceAlerts(id){
+     if(!id){
+        throw "id is empty"
+    }
+    var result = multitechStore.query(
+        {"query":'id="'+id+'" and schema = "'+alert_schema+'"',fields:"*"}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result.documents;
+    } else{
+        return null;
+    }
+    
+}
+/**
+*
+* 
+* @function getDeviceLatestEvent
+* @param {String} [id] the device id
+* @return {Object}  the device  latestEvent or null if not found
+* @throw {error} in case the id not sent
+*
+*/
+function getDeviceLatestEvent(id){
+    if(!id){
+        throw "id is empty"
+    }
+    var result = multitechStore.query(
+        {"query":'id="'+id+'" and schema = "'+latest_event_schema+'"',fields:"*"}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result.documents[0];
+    } else{
+        return null;
+    }
+    
+}
+/**
+*
+* 
+* @function getAllLatestEvents
+* @return {Array}  all the latestEvents
+*
+*/
+function getAllLatestEvents(){
+    
+    var result = multitechStore.query(
+        {"query":'schema = "'+latest_event_schema+'"',fields:"*"}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result.documents;
+    } else{
+        return null;
+    }
+    
+}
+/**
+*
+* 
+* @function getAllAlerts
+* @return {Array}  all the alerts
+*
+*/
+function getAllAlerts(resultsPerPage, pageNumber){
+    
+    var result = multitechStore.query(
+        {"query":'schema = "'+alert_schema+'"',fields:"*", "resultsPerPage": resultsPerPage, "pageNumber": pageNumber}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result;
+    } else{
+        return null;
+    }
+    
+}
+
+function searchAlerts(id, resultsPerPage, pageNumber){
+     if(!id){
+        throw "id is empty"
+    }
+    var result = multitechStore.query(
+        {"query":'id like "'+id+'%" and schema = "'+alert_schema+'"',fields:"*", "resultsPerPage": resultsPerPage, "pageNumber": pageNumber}
+    );
+    if(result && result.metadata.status=="success"){
+        return result.result;
+    } else{
+        return null;
+    }
+    
+}
